@@ -4,7 +4,7 @@ import pygame
 
 from escenario import Escenario
 from conf import *
-from comandos import comandos
+#from comandos import comandos
 from rumbo import Rumbo
 
 
