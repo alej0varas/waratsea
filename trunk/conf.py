@@ -1,0 +1,5 @@
+DEBUG = True
+MAX_X = 800
+MAX_Y = 800
+MAX_S = 359
+MIN_S = 0
