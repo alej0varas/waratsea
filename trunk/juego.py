@@ -24,48 +24,77 @@ from conf import *
 class Juego:
     def __init__(self):
         self.jugar = True
-
-    def main(self):
         # Inicio pygame
         pygame.init()
         pygame.event.set_blocked(pygame.MOUSEMOTION)
         pygame.key.set_repeat(1, 5)
-        screen = pygame.display.set_mode((MAX_X, MAX_Y))
+        self.screen = pygame.display.set_mode((MAX_X, MAX_Y))
+        self.font = pygame.font.SysFont("vera", T_LETRA)
         # Fin pygame
-        naves = ('carak',)
-        escenario = Escenario(screen, naves)
-        comando = ''
-        comandando = False
+        self.naves = ('carak',)
+        imagen = self.cargar_imagen('fondo')
+        self.escenario = Escenario(self, imagen)
+        self.comando = ''
+        self.comandando = False
+
+    def main(self):
         while self.jugar:
             event = pygame.event.poll()
+            if self.comando:
+                self.escribir(self.comando, 0, 50, relleno=20)
             if event.type == pygame.KEYDOWN:
-                if comandando:
+                if self.comandando:
                     if event.key == pygame.K_RETURN:
-                        if comando[0] == 'a':
-                            valor = int(comando.split()[1])
-                            escenario.naves[0].rumbo = Rumbo(valor)
-                            comando = ''
-                            comandando = False
+                        self.escribir(' '*50, 0, 50, 'black') # borra comando
+                        self.comando = self.comando.strip()
+                        if self.comando[0] == 'a':
+                            valor = int(self.comando.split()[1])
+                            self.escenario.naves[0].rumbo = Rumbo(valor)
+                            self.comando = ''
+                            self.comandando = False
                         #ejecutar(comando)
                         #print "ENTER"
                     else:
-                        comando += chr(event.key)
-                        #print comando
+                        #self.escribir(self.comando, 0, 50)
+                        if event.key == pygame.K_BACKSPACE:
+                            self.comando = self.comando[:-1]
+                        elif event.key == pygame.K_ESCAPE:
+                            self.comando = ''
+                            self.comandando = False
+                        else:
+                            try:
+                                self.comando += chr(event.key)
+                            except ValueError:
+                               pass
                 else:
                     if event.key == pygame.K_LEFT:
-                        escenario.naves[0].iz()
+                        self.escenario.naves[0].iz()
                     elif event.key == pygame.K_RIGHT:
-                        escenario.naves[0].de()
+                        self.escenario.naves[0].de()
                     elif event.key == pygame.K_c:
-                        comandando = True
+                        self.comandando = True
                 if event.key == pygame.K_ESCAPE:
                     exit()
 
-            escenario.juega()
-            escenario.dibuja()
+            self.escenario.juega()
+            self.escenario.dibuja()
             #print escenario
             time.sleep(0.1)
             pygame.display.flip()
+
+    def cargar_imagen(self, archivo, directorio='data', formato='png'):
+        #directorio = os.path(directorio) #TODO
+        #if not self.formato in archivo:
+        #    formato = self.formato
+        imagen = pygame.Surface.convert_alpha(pygame.image.load(directorio+'/'+archivo+'.'+formato))
+        return imagen
+
+    def escribir(self, text, x=0, y=0, color='white', relleno=5):
+        text = '%s' % (text) + ' '*relleno
+        font_s = self.font.render(text, 0, pygame.color.Color(color))
+        rect = font_s.get_rect()
+        self.screen.blit(self.escenario.imagen, (x, y), rect) #Borra anterior
+        self.screen.blit(font_s, (x, y), rect)
 
     #def ejecutar(comando):
     #    print "ejecutando " + comando

@@ -20,6 +20,7 @@ naves = {
     'carak': {
         'palos': ('mayor',),
         'timones': ('normal',),
+        'vel_max': 15,
     },
 }
 

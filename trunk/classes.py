@@ -30,12 +30,16 @@ from data import *
 
 
 class Escenario:
-    def __init__(self, screen, naves):
+    def __init__(self, juego, imagen):
         MIN_A = 0
         MAX_A = 2
         MIN_V = 0
         MAX_V = 5
-        self.screen = screen
+        self.juego = juego
+        # pygame
+        self.imagen = imagen
+        self.imagen_prev = self.imagen
+        self.juego.screen.blit(self.imagen, self.imagen.get_rect())
         #self.corriente = [(randint(MIN_A, MAX_A), randint(0,359)) for i in range(0, MAX_X*MAX_Y)]
         #self.viento = [(randint(MIN_V, MAX_V), randint(0,359)) for i in range(0, MAX_X*MAX_Y)]
         self.crear_naves(naves)
@@ -60,28 +64,35 @@ class Escenario:
         corriente += '\n%s' % ' '.join([str(i) for i in self.naves])
         return corriente
         """
-        for nave in self.naves:
-            print nave
+        #return '\n'.join( i.__str__() for i in self.naves)
         return ''
 
     def juega(self):
         for nave in self.naves:
             nave.jugar()
-            print nave
+            #print nave
 #        viento = []
 
     def crear_naves(self, naves):
-        self.naves = [Nave(self, i) for i in naves]
+        self.naves = [Nave(self, i, self.juego.cargar_imagen('nave')) for i in naves]
 
     def dibuja(self):
         for nave in self.naves:
-            rect = (nave.x, nave.y, 2, 2)
-            pygame.draw.rect(self.screen, pygame.color.Color("white"), rect)
+            #pygame.draw.rect(self.juego.screen, pygame.color.Color("white"), rect) #TODO color
+            rect = nave.imagen.get_rect()
+            rect_borrar = nave.imagen.get_rect(center=(nave.x, nave.y))
+            pos = (nave.x - rect.centerx, nave.y - rect.centery)
+            self.juego.screen.blit(self.imagen_prev, nave.pos_ultima, rect_borrar)
+            self.juego.screen.blit(nave.imagen, pos, rect)
+            nave.set_pos_ultima()
+            self.juego.escribir(str(nave))
 
 
 class Nave:
-    def __init__(self, escenario, tipo):
+    def __init__(self, escenario, tipo, imagen):
         tipo = naves[tipo]
+        self.imagen = imagen
+        self.imagen_ori = self.imagen
         self.rumbo = Rumbo(0) # donde debe ir
         self.rumbo_verdadero = Rumbo(self.rumbo.valor) #donde va la nave
         #self.rumbo_relativo = 0 #donde apunta la nave
@@ -93,7 +104,9 @@ class Nave:
         self.xc = 0.0
         self.y = MAX_Y/2
         self.yc = 0.0
+        self.set_pos_ultima()
         self.velocidad = 1.0
+        self.vel_max = tipo['vel_max']
         #self.palos = []
         #self.construir_palos()
         self.rvc = 0.0 # rumbo verdadero contador
@@ -115,25 +128,27 @@ class Nave:
         incremento = 0
         pos = self.y*(MAX_Y-1)+self.x-1
         #incremento = self.escenario.corriente[pos][0]*self.escenario.corriente[pos][1]
-        incremento += self.calcular_F_velas()
-        if self.velocidad + incremento < 0:
+        #incremento += self.calcular_F_velas()
+        if self.velocidad + incremento < 0 or self.velocidad + incremento > self.vel_max:
             incremento = 0
         self.velocidad += incremento
 
     def avanzar(self):
         self.xc += self.rumbo_verdadero.x()
         if abs(self.xc) > 1:
+            delta = abs(self.xc) - abs(int(self.xc))
             self.x += int(self.xc)*self.velocidad
-            self.xc = 0.0
+            self.xc = delta
         if self.x > MAX_X:
             self.x = MAX_X-1
         if self.x < 0:
             self.x = 0
 
         self.yc -= self.rumbo_verdadero.y()
+        delta = abs(self.yc) - abs(int(self.yc))
         if abs(self.yc) > 1:
             self.y += int(self.yc)*self.velocidad
-            self.yc = 0.0
+            self.yc = delta
         if self.y > MAX_Y:
             self.y = MAX_Y-1
         if self.y < 0:
@@ -156,6 +171,7 @@ class Nave:
         if sentido > MAX_S:
             sentido -= MAX_S
         self.simbolo = self.simbolos[sentido/90]
+        self.imagen = pygame.transform.rotate(self.imagen_ori, -self.rumbo_verdadero.valor)#TODO: girar imagen
 
     def calcular_F_velas(self):
         return randint(-3, 2)
@@ -169,6 +185,9 @@ class Nave:
 
     def iz(self):
         self.rumbo += -1
+
+    def set_pos_ultima(self):
+        self.pos_ultima = self.imagen.get_rect(center=(self.x, self.y))
 
 
 class Palo:
